@@ -1,872 +1,436 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>하이오더 견적 · 체크리스트 · 위약금 계산기</title>
+<meta charset="UTF-8">
+<title>KT M&S 기업무선 PTX 골프장 도입 견적서</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  :root{
-    --bg:#f4f7fb; --card:#ffffff; --line:#d9e2ef; --text:#1f2937; --muted:#6b7280;
-    --primary:#d92c3a; --primary-soft:#fdebed; --accent:#0f766e; --warn:#b45309; --input:#fff8d6;
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    color: #333333;
+    line-height: 1.6;
+    margin: 0;
+    padding: 24px 0 60px 0;
+    background: #e9edf2;
   }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:var(--bg);color:var(--text)}
-  .app{max-width:1280px;margin:0 auto;padding:16px}
-  .topbar{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
-  .title h1{margin:0;font-size:28px}
-  .title p{margin:6px 0 0;color:var(--muted);font-size:14px}
-  .actions{display:flex;gap:8px;flex-wrap:wrap}
-  button{border:0;background:var(--primary);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
-  button.secondary{background:#334155}
-  button.light{background:#fff;color:var(--text);border:1px solid var(--line)}
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-  .tab{padding:10px 14px;border:1px solid var(--line);background:#fff;border-radius:999px;cursor:pointer;font-weight:700}
-  .tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
-  .panel{display:none}
-  .panel.active{display:block}
-  .grid{display:grid;gap:16px}
-  .grid.cols-2{grid-template-columns:1.1fr .9fr}
-  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 6px 16px rgba(15,23,42,.04)}
-  .card h2,.card h3{margin:0 0 12px}
-  .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-  .muted{color:var(--muted)}
-  .badge{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;background:var(--primary-soft);color:var(--primary);font-size:12px;font-weight:700}
-  .form-grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:10px}
-  .field{display:flex;flex-direction:column;gap:6px}
-  .field label{font-size:13px;font-weight:700;color:#374151}
-  .field input,.field select,.field textarea{
-    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);
-    font:inherit;
-  }
-  .field input.calc,.field select.calc{background:var(--input)}
-  .field textarea{min-height:100px;resize:vertical}
-  .table-wrap{overflow:auto}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{border-bottom:1px solid #e5e7eb;padding:8px 6px;text-align:center;vertical-align:middle}
-  th{background:#f8fafc;font-weight:800;position:sticky;top:0;z-index:1}
-  td.left, th.left{text-align:left}
-  td.group{background:#fef2f2;font-weight:800;color:#991b1b}
-  td.sum, th.sum{background:#fff7ed;font-weight:800}
-  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .kpi .box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
-  .kpi .box .label{font-size:12px;color:var(--muted)}
-  .kpi .box .value{font-size:24px;font-weight:800;margin-top:6px}
-  .note{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;font-size:13px;line-height:1.6}
-  .help{font-size:12px;color:var(--muted)}
-  .check-table td:nth-child(5){font-weight:700}
-  .pill-ok,.pill-no{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800}
-  .pill-ok{background:#dcfce7;color:#166534}
-  .pill-no{background:#fee2e2;color:#991b1b}
-  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  .summary-table td,.summary-table th{text-align:left}
-  .small{font-size:12px}
 
-  .quote-capture-wrap{display:grid;gap:14px}
-  .capture-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-  .capture-actions .hint{font-size:12px;color:var(--muted);align-self:center;margin-right:auto}
-  .estimate-sheet{background:#fff;border:1px solid #cfd8e3;border-radius:20px;padding:20px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
-  .estimate-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:2px solid #111827;padding-bottom:14px;margin-bottom:14px}
-  .estimate-header h2{margin:0;font-size:30px;letter-spacing:-0.4px}
-  .estimate-sub{margin-top:6px;font-size:13px;color:var(--muted)}
-  .estimate-stamp{min-width:180px;text-align:right;font-size:13px;line-height:1.6}
-  .meta-grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:8px 12px;margin-bottom:14px}
-  .meta-item{border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:#fafafa}
-  .meta-item .label{font-size:11px;color:var(--muted);margin-bottom:4px}
-  .meta-item .value{font-size:14px;font-weight:700;word-break:break-all}
-  .capture-note{font-size:12px;color:var(--muted);margin-top:10px}
-  .capture-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
-  .capture-summary .sum-card{border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fafafa}
-  .capture-summary .sum-card .label{font-size:12px;color:var(--muted)}
-  .capture-summary .sum-card .value{font-size:22px;font-weight:800;margin-top:6px}
-  .estimate-sheet table th{position:static}
-  .auto-pill{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:800;margin-left:6px}
+  /* A4 캔버스 (210mm x 297mm) */
+  #quotation {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 14mm 14mm;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.15);
+  }
 
-  @media (max-width: 1080px){
-    .grid.cols-2,.grid.cols-3,.two-col,.capture-summary{grid-template-columns:1fr}
-    .form-grid,.meta-grid{grid-template-columns:repeat(2,minmax(160px,1fr))}
-    .kpi{grid-template-columns:repeat(2,1fr)}
-    .estimate-header{flex-direction:column}
-    .estimate-stamp{text-align:left}
+  .quotation-header {
+    text-align: center;
+    border-bottom: 3px double #0054a6;
+    padding-bottom: 16px;
+    margin-bottom: 22px;
   }
-  @media (max-width: 640px){
-    .form-grid,.meta-grid{grid-template-columns:1fr}
-    .kpi,.capture-summary{grid-template-columns:1fr}
-    .estimate-sheet{padding:14px}
+  .quotation-header h1 {
+    color: #0054a6;
+    font-size: 22pt;
+    margin: 0 0 8px 0;
+    letter-spacing: -1px;
   }
-  @media print{
-    body{background:#fff}
-    .tabs,.topbar .actions,.no-print{display:none!important}
-    .panel{display:block!important}
-    .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
+  .quotation-header p { margin: 0; color: #666666; font-size: 10.5pt; }
+
+  .info-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+  .info-table td { border: 1px solid #cccccc; padding: 7px 8px; font-size: 9.5pt; vertical-align: middle; }
+  .info-table td.label { background-color: #f4f7fa; font-weight: bold; width: 15%; text-align: center; }
+  .info-table td.manager-cell strong { display: block; margin-bottom: 3px; }
+
+  .main-title {
+    font-size: 12.5pt;
+    color: #0054a6;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    border-left: 4px solid #0054a6;
+    padding-left: 8px;
+  }
+
+  .data-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; table-layout: fixed; }
+  .data-table th, .data-table td { border: 1px solid #dddddd; padding: 8px 4px; text-align: center; font-size: 8.9pt; white-space: nowrap; overflow: visible; }
+  .data-table th { background-color: #e6f0fa; color: #111111; font-weight: bold; white-space: normal; font-size: 9pt; }
+  .text-right { text-align: right !important; }
+  .highlight-text { color: #d9534f; font-weight: bold; }
+  .total-row { background-color: #f0f7ff; font-weight: bold; }
+  .total-row td { white-space: normal; }
+  .data-table td.item-cell {
+    white-space: normal;
+    text-align: center;
+    padding: 6px 8px;
+    line-height: 1.35;
+  }
+  .item-edit {
+    width: 100%;
+    min-height: 2.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+    text-align: center;
+    outline: none;
+    background: transparent;
+  }
+  .item-edit:focus { background: #fffbe0; }
+
+  .legal-notice {
+    background-color: #fff9e6;
+    border: 1px solid #ffe0b2;
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 9.3pt;
+    margin-top: 16px;
+    margin-bottom: 18px;
+  }
+
+  ul.effects { padding-left: 20px; font-size: 9.5pt; margin-bottom: 20px; }
+  ul.effects li { margin-bottom: 4px; }
+
+  .footer-sign {
+    margin-top: 34px;
+    text-align: center;
+    font-size: 12pt;
+    font-weight: bold;
+    color: #222222;
+  }
+
+  /* 입력 필드 스타일 - 종이 위에서는 텍스트처럼 보이도록 */
+  .edit {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    text-align: inherit;
+    font-weight: inherit;
+    padding: 0;
+  }
+  input.edit:focus, div.edit:focus {
+    outline: none;
+    background: #fffbe0;
+  }
+  input.qty-input { text-align: center; font-weight: bold; }
+  input.money-input { text-align: right; }
+  input.date-input {
+    text-align: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: #0054a6;
+  }
+  .amount-cell { white-space: nowrap; padding-right: 8px !important; }
+  .amount-cell input { display: inline-block; }
+  .discount-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 2px;
+  }
+  .discount-inline input { width: 55px; text-align: right; }
+
+  /* ---------- 컨트롤 패널 (저장되지 않음) ---------- */
+  .control-panel {
+    width: 210mm;
+    margin: 20px auto 0 auto;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .control-panel button {
+    padding: 12px 22px;
+    font-size: 11pt;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: opacity 0.15s ease;
+    font-family: inherit;
+  }
+  .control-panel button:hover { opacity: 0.85; }
+  #btn-jpg { background-color: #0054a6; }
+  #btn-pdf { background-color: #d9534f; }
+  #btn-reset { background-color: #6c757d; }
+
+  .hint {
+    width: 210mm;
+    margin: 10px auto 0 auto;
+    text-align: center;
+    font-size: 9.5pt;
+    color: #777;
+  }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .control-panel, .hint { display: none; }
+    #quotation { box-shadow: none; margin: 0; }
   }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <div class="title">
-      <h1>하이오더 견적 · 체크리스트 · 위약금 계산기</h1>
-      <p>엑셀 대신 브라우저에서 바로 입력·계산·인쇄할 수 있도록 구성한 HTML 버전입니다.</p>
-    </div>
-    <div class="actions">
-      <button onclick="window.print()">전체 인쇄</button>
-      <button class="secondary" onclick="saveEstimateImage()">견적서 PNG 저장</button>
-      <button class="secondary" onclick="resetAll()">입력 초기화</button>
-      <button class="light" onclick="downloadJson()">입력값 저장(JSON)</button>
-      <button class="light" onclick="document.getElementById('jsonLoader').click()">입력값 불러오기</button>
-      <input id="jsonLoader" type="file" accept=".json" style="display:none" onchange="loadJson(event)">
-    </div>
-  </div>
 
-  <div class="tabs no-print" id="tabs"></div>
+<div id="quotation">
 
-  <section class="panel active" data-tab="필수">
-    <div class="grid cols-2">
-      <div class="card">
-        <div class="section-title">
-          <h2>필수 준비 항목</h2>
-          <span class="badge">영업 시 필수 확인</span>
-        </div>
-        <div class="table-wrap">
-          <table class="summary-table">
-            <thead>
-              <tr><th style="width:80px">시트번호</th><th>제목</th><th>세부내용</th><th>참고사항</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>1번</td><td>견적서</td><td>1-1. 하이오더 견적서 / 1-2. 포스 견적서</td><td>선불형 카드리더기는 VAN대리점과 계약, 신규점 또는 POS 변경점 확인</td></tr>
-              <tr><td>2번</td><td>체크리스트</td><td>2-1. 청약 전 도입가능여부 확인사항 / 2-2. 청약 후 설치를 위한 확인사항</td><td>하이오더 전담센터 카톡 추가 후 전달 필수</td></tr>
-              <tr><td>3번</td><td>도면예시</td><td>사진 또는 손그림(설치 7일전 권장)</td><td>하이오더 전담센터 카톡 추가 후 전달 필수</td></tr>
-              <tr><td>4번</td><td>메뉴전달</td><td>메뉴 사진 전달(설치 7일전 권장)</td><td>하이오더 전담센터 카톡 추가 후 전달 필수</td></tr>
-              <tr><td>5번</td><td>원격설치</td><td>기존 POS 이용점에 원격 지원(설치 3일전 권장)</td><td>기존 사용중이던 POS 연동을 위해 필수</td></tr>
-              <tr><td>6번</td><td>전달사항</td><td>전달해야 할 별도 특이사항</td><td>하이오더 전담센터 카톡 추가 후 전달 필수</td></tr>
-              <tr><td>7번</td><td>청약서</td><td>최종 확인된 견적으로 작성</td><td>비즈나루 첨부</td></tr>
-              <tr><td>8번</td><td>참고자료</td><td>위약금</td><td>중도해지 비교 안내용</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card">
-        <h2>실무 사용 방법</h2>
-        <div class="note">
-          1. <b>견적서</b> 탭에서 단말 수량과 약정조건을 입력하면 공급가·세액·합계가 자동 계산됩니다.<br>
-          2. <b>도입체크 / 설치체크</b> 탭은 현장 체크리스트로 바로 인쇄해 사용할 수 있습니다.<br>
-          3. <b>도면 / 메뉴 / 원격 / 전달</b> 탭은 메모·전달용 양식으로 사용하면 됩니다.<br>
-          4. <b>설치비/부자재</b>는 서비스 수량을 제외한 실제 단말 수량 기준으로만 자동 연동됩니다.<br>
-          5. <b>위약금</b> 탭은 견적 탭의 수량을 연동하여 중도해지 청구금액을 계산합니다.
-        </div>
-        <div class="field" style="margin-top:14px">
-          <label>실무 메모</label>
-          <textarea id="essentialMemo" placeholder="예: 점주와 최종 협의사항, 설치 희망일, VAN사 확인 내용 등"></textarea>
-        </div>
-      </div>
-
-      <div class="capture-note">※ 서비스이용료 수량은 단말 수량과 1:1 자동 연동되며, 설치비 및 부자재는 실제 단말 총수량 기준으로 계산됩니다.</div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="견적서">
-    <div class="quote-capture-wrap">
-      <div class="capture-actions no-print">
-        <div class="hint">견적서 영역만 PNG로 저장됩니다. 상담용 전송 이미지 기준으로 최적화했습니다.</div>
-        <button class="light" onclick="saveEstimateImage()">견적서 이미지 저장</button>
-      </div>
-
-      <div id="estimateArea" class="estimate-sheet">
-        <div class="estimate-header">
-          <div>
-            <h2>하이오더 견적서</h2>
-            <div class="estimate-sub">하이오더 단말 · 서비스 · 설치비 및 부자재 견적</div>
-          </div>
-          <div class="estimate-stamp">
-            <div><b>공급사</b> <span id="captureCompanyName">주식회사 케이티</span></div>
-            <div><b>담당자</b> <span id="captureManagerName">홍길동</span> / <span id="captureManagerPhone">010-1234-5678</span></div>
-            <div><b>견적일</b> <span id="captureQuoteDate">-</span></div>
-          </div>
-        </div>
-
-        <div class="meta-grid">
-          <div class="meta-item"><div class="label">매장명</div><div class="value" id="captureStoreName">-</div></div>
-          <div class="meta-item"><div class="label">서비스명</div><div class="value" id="captureServiceName">-</div></div>
-          <div class="meta-item"><div class="label">견적유효기간</div><div class="value" id="captureQuoteValid">-</div></div>
-          <div class="meta-item"><div class="label">사업자등록번호</div><div class="value" id="captureBizNo">-</div></div>
-          <div class="meta-item"><div class="label">회사명</div><div class="value" id="captureCompanyName2">-</div></div>
-          <div class="meta-item"><div class="label">대표자명</div><div class="value" id="captureCeoName">-</div></div>
-          <div class="meta-item"><div class="label">주소</div><div class="value" id="captureCompanyAddress">-</div></div>
-          <div class="meta-item"><div class="label">업종</div><div class="value" id="captureIndustry">-</div></div>
-        </div>
-
-        <div class="card" style="padding:0;border:none;box-shadow:none;margin-bottom:14px">
-          <div class="section-title" style="padding:0 0 10px 0;margin:0">
-            <h3 style="margin:0">기본 정보 입력</h3>
-            <span class="badge">입력칸 최소화 · 자동연동 보정</span>
-          </div>
-          <div class="form-grid">
-        <div class="field"><label>견적일자</label><input class="persist" id="quoteDate" type="date"></div>
-        <div class="field"><label>매장명</label><input class="persist" id="storeName" type="text" value="기동해장국 귀중"></div>
-        <div class="field"><label>서비스명</label><input class="persist" id="serviceName" type="text" value="하이오더 외"></div>
-        <div class="field"><label>견적유효기간</label><input class="persist" id="quoteValid" type="text" value="견적 제출일로부터 30일"></div>
-
-        <div class="field"><label>사업자등록번호</label><input class="persist" id="bizNo" type="text" value="102-81-42945"></div>
-        <div class="field"><label>회사명</label><input class="persist" id="companyName" type="text" value="주식회사 케이티"></div>
-        <div class="field"><label>대표자명</label><input class="persist" id="ceoName" type="text" value="김영섭"></div>
-        <div class="field"><label>주소</label><input class="persist" id="companyAddress" type="text" value="경기도 성남시 분당구 불정로 90(정자동)"></div>
-
-        <div class="field"><label>업종</label><input class="persist" id="industry" type="text" value="전신전화 외"></div>
-        <div class="field"><label>담당자</label><input class="persist" id="managerName" type="text" value="홍길동"></div>
-        <div class="field"><label>연락처</label><input class="persist" id="managerPhone" type="text" value="010-1234-5678"></div>
-        <div class="field"><label>메뉴판 카드리더기 유형</label>
-          <select class="calc persist" id="menuReaderType">
-            <option value="선불형">선불형</option>
-            <option value="후불형">후불형</option>
-          </select>
-        </div>
-      </div>
+    <div class="quotation-header">
+        <h1>모토로라 RG170 도입견적</h1>
+        <p>KT M&S 기업무선 PTX 스마트 통신망 전환 제안</p>
     </div>
 
-    <div class="card" style="margin-top:16px">
-      <h3>상품 입력</h3>
-      <div class="table-wrap">
-        <table id="quoteTable">
-          <thead>
+    <table class="info-table">
+        <tr>
+            <td class="label">공급 명칭</td>
+            <td>
+                <div class="edit" id="supplyName" contenteditable="true" style="text-align: center; outline: none; line-height: 1.4;">골프장 경기 운영 혁신을 위한<br>VoLTE 무전기 도입</div>
+            </td>
+            <td class="label">견적 일자</td>
+            <td><input class="edit date-input" type="date" id="quoteDate" value="2026-07-01"></td>
+        </tr>
+        <tr>
+            <td class="label">제안 주관</td>
+            <td class="manager-cell">
+                <strong>KT M&S 동부법인지사</strong>
+                <input class="edit" id="managerInfo" value="김영훈 과장 010-8290-9971">
+            </td>
+            <td class="label">제안 단말</td>
+            <td><input class="edit" id="deviceName" value="모토로라 솔루션 RG170 (WAVE PTX)"></td>
+        </tr>
+    </table>
+
+    <div class="legal-notice">
+        <strong>⚠️ 법적 행정 처분 불이행 리스크 안내 (과기부 정책 고지)</strong><br>
+        과학기술정보통신부 정책에 의거하여 현재 귀 사에서 운용 중인 400MHz 아날로그 생활무전기는 <br><strong>2026년 12월 31일부로 대한민국 전역에서 전면 종료(사용 불법화)</strong>됩니다. <br>본 견적은 필수적 무전망 디지털 전환에 따른 자본 지출(CAPEX)을 zero화하기 위한 KT M&S 단독 프로모션 단가입니다.
+    </div>
+
+    <div class="main-title">1. 초기 도입 비용 (CAPEX)</div>
+    <table class="data-table">
+        <colgroup>
+            <col style="width:24%;"><col style="width:18%;"><col style="width:18%;"><col style="width:10%;"><col style="width:30%;">
+        </colgroup>
+        <thead>
             <tr>
-              <th class="left">구분</th>
-              <th class="left">품목</th>
-              <th>약정/할부</th>
-              <th>수량</th>
-              <th>단가</th>
-              <th>공급가액</th>
-              <th>세액</th>
-              <th>합계액(VAT포함)</th>
+                <th>품명 및 규격</th>
+                <th>정상 가격</th>
+                <th>프로모션 단가</th>
+                <th>수량</th>
+                <th>공급 가액</th>
             </tr>
-          </thead>
-          <tbody id="quoteBody"></tbody>
-        </table>
-      </div>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="item-cell"><div class="item-edit" id="deviceSpec" contenteditable="true">모토로라 RG170 <br>(IP69 방수, <br>1.5W 고출력스피커)</div></td>
+                <td class="text-right amount-cell">
+                    <input class="edit money-input" type="text" inputmode="numeric" id="normalPrice" value="297,000">원
+                </td>
+                <td class="text-right amount-cell highlight-text">
+                    <input class="edit money-input highlight-text" type="text" inputmode="numeric" id="promoPrice" value="0">원
+                </td>
+                <td>
+                    <input class="edit qty-input" type="number" id="qty" min="1" value="60">
+                </td>
+                <td class="text-right amount-cell" style="font-weight: bold;"><span id="supplyAmount">0</span>원</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="4">초기 투자비용 합계 (단말기 대금 할인 혜택)</td>
+                <td class="text-right highlight-text">총 <span id="capexSaving">0</span>원 절감</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="main-title">2. 월 운영 비용 (OPEX - 3년 약정 기준)</div>
+    <table class="data-table">
+        <colgroup>
+            <col style="width:24%;"><col style="width:16%;"><col style="width:16%;"><col style="width:22%;"><col style="width:22%;">
+        </colgroup>
+        <thead>
+            <tr>
+                <th>요금 항목 구성</th>
+                <th>정상 월정액</th>
+                <th>선택약정 할인액</th>
+                <th>대당 월 청구액(VAT 포함)</th>
+                <th>전체 기준 총 월정액</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="item-cell"><div class="item-edit" id="planName" contenteditable="true">기업전용 라이트(9,900원)+PTX 부가서비스(5,500원)</div></td>
+                <td class="text-right amount-cell">
+                    <input class="edit money-input" type="text" inputmode="numeric" id="normalMonthly" value="15,400">원
+                </td>
+                <td class="amount-cell">
+                    <span class="discount-inline">-<input class="edit money-input" type="text" inputmode="numeric" id="discountMonthly" value="2,475">원</span>
+                </td>
+                <td class="text-right amount-cell highlight-text"><span id="perUnitMonthly">0</span>원</td>
+                <td class="text-right amount-cell" style="font-weight: bold;"><span id="totalMonthly">0</span>원</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="3">연간 총 운영 비용 (타사 PTT 서비스 대비 20% 절감 적용)</td>
+                <td colspan="2" class="text-right" style="color: #0054a6;"><span id="annualTotal">0</span>원 / 년</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="main-title">3. 도입 시 독점적 기대 효과</div>
+    <ul class="effects">
+        <li><strong>음영지역 ZERO 통신망:</strong> KT LTE 전국망 백본망을 사용하여 산악 지형 및 그늘집, 지하에서도 통신 단절 없음.</li>
+        <li><strong>골프장 특화 하드웨어:</strong> 카트 주행 소음을 상쇄하는 1.5W 스피커 탑재 및 세차 환경을 견디는 강력한 IP69 방수방진.</li>
+        <li><strong>완벽한 보안 및 안전:</strong> AES-256 비화 암호화 기술로 내부 유출 방지 및 경기원 보호용 SOS 긴급 알람 작동.</li>
+    </ul>
+
+    <div class="footer-sign">
+        KT M&S 동부법인지사 대표이사 (직인생략)
     </div>
 
-    <div class="kpi" style="margin-top:16px">
-      <div class="box"><div class="label">설치 연동 총 단말 수량</div><div class="value" id="kpiTotalQty">0</div></div>
-      <div class="box"><div class="label">하이오더 합계(VAT포함)</div><div class="value" id="kpiOrderTotal">0원</div></div>
-      <div class="box"><div class="label">설치비 및 부자재 합계(VAT별도)</div><div class="value" id="kpiInstallTotal">0원</div></div>
-      <div class="box"><div class="label">견적 총액</div><div class="value" id="kpiGrandTotal">0원</div></div>
-    </div>
-
-    <div class="grid cols-2" style="margin-top:16px">
-      <div class="card">
-        <h3>서비스요금 납부처</h3>
-        <table>
-          <thead><tr><th class="left">품목</th><th>납부처</th></tr></thead>
-          <tbody>
-            <tr><td class="left">메뉴판 태블릿(단말기)</td><td>KT</td></tr>
-            <tr><td class="left">메뉴판 서비스이용료</td><td>KT</td></tr>
-            <tr><td class="left">메뉴판 선불형 카드리더기</td><td>KT</td></tr>
-            <tr><td class="left">알림판 태블릿(단말기)</td><td>KT</td></tr>
-            <tr><td class="left">알림판 서비스이용료</td><td>KT</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>비고</h3>
-        <div class="note small">
-          1. 본 견적서의 유효기간은 견적서 제출일로부터 30일입니다.<br>
-          2. 상기 견적서 중 KT 단말의 A/S 보증기간은 3년이며, 세부사항은 이용약관 기준을 따릅니다.<br>
-          3. 하이오더 운영 및 POS 연동 위한 KT 유무선통신 요금은 별도입니다.<br>
-          4. 일부 가맹점은 설치·로봇연동 등 예외사항으로 추가 비용이 발생할 수 있습니다.<br>
-          5. 웨이팅 거치대는 제조사 사이트 별도 구매 항목입니다.
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="도입체크">
-    <div class="card">
-      <div class="section-title">
-        <h2>청약 전 도입 가능 여부 체크리스트</h2>
-        <span class="badge">현장 자가진단용</span>
-      </div>
-      <div class="note">영업대표가 아래 체크리스트를 활용하여 매장 내 하이오더 도입 가능 여부를 자가진단한 뒤, 하이오더 전담센터 채널에 전달하면 됩니다.</div>
-      <div class="table-wrap" style="margin-top:12px">
-        <table class="check-table">
-          <thead>
-            <tr><th>No.</th><th class="left">체크리스트</th><th class="left">주요 확인 요소(설치전)</th><th>확인여부</th><th class="left">비고</th></tr>
-          </thead>
-          <tbody id="precheckBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="설치체크">
-    <div class="card">
-      <div class="section-title">
-        <h2>설치 전 체크리스트</h2>
-        <span class="badge">청약 후 필수 확인</span>
-      </div>
-      <div class="note">영업대표가 아래 체크리스트를 활용하여 설치 필수 자료를 확인하고, 하이오더 전담센터에 전달하면 됩니다.</div>
-      <div class="table-wrap" style="margin-top:12px">
-        <table class="check-table">
-          <thead>
-            <tr><th>No.</th><th class="left">체크리스트</th><th class="left">주요 확인 요소(설치전)</th><th>확인여부</th><th class="left">비고</th></tr>
-          </thead>
-          <tbody id="installcheckBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="도면">
-    <div class="card">
-      <h2>도면 전달 양식</h2>
-      <div class="note">청약서 후면 별첨 페이지에 매장 도면을 약식으로 기재하거나 사진을 첨부하여 하이오더 전담센터에 전달합니다.</div>
-      <div class="two-col" style="margin-top:16px">
-        <div class="field">
-          <label>매장 구조 메모</label>
-          <textarea class="persist" id="layoutMemo" placeholder="예: 출입구, 카운터, 주방, 포스 위치, 공유기 위치, 테이블 번호 등"></textarea>
-        </div>
-        <div class="field">
-          <label>테이블 / 장비 배치 메모</label>
-          <textarea class="persist" id="layoutDevices" placeholder="예: 2인석 6개, 4인석 8개, 오더포스 위치, 프린터 위치, 랜선 포인트 등"></textarea>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="메뉴">
-    <div class="card">
-      <h2>메뉴 전달 양식</h2>
-      <div class="note">메뉴판 사진 및 메뉴 옵션 선택사항은 설치일 7일 전까지 반드시 전달해야 합니다.</div>
-      <div class="two-col" style="margin-top:16px">
-        <div class="field">
-          <label>대표 메뉴 / 옵션</label>
-          <textarea class="persist" id="menuMemo" placeholder="예: 삼겹살 180g / 공기밥 추가 / 곱빼기 / 맵기 선택 / 토핑 추가 등"></textarea>
-        </div>
-        <div class="field">
-          <label>음료 / 주류 / 특이사항</label>
-          <textarea class="persist" id="drinkMemo" placeholder="예: 음료 2,000원 / 소주 5,000원 / 포장 가능 여부 / 품절 메뉴 처리 방식"></textarea>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="원격">
-    <div class="card">
-      <h2>원격 설치 안내</h2>
-      <div class="note">
-        기존 메인 POS에 원격 프로그램 설치가 되어 있어야 향후 점주 문의 대응과 원격 지원이 편리합니다. 설치 3일 전까지 완료하는 구성이 가장 안전합니다.
-      </div>
-      <div class="form-grid" style="margin-top:16px">
-        <div class="field"><label>원격 프로그램 설치 여부</label>
-          <select class="persist" id="remoteInstalled"><option>예정</option><option>완료</option><option>미완료</option></select>
-        </div>
-        <div class="field"><label>메인 POS 수량</label><input class="persist" id="mainPosCount" type="number" min="0" step="1" value="0"></div>
-        <div class="field"><label>오더 POS 수량</label><input class="persist" id="orderPosCount" type="number" min="0" step="1" value="0"></div>
-        <div class="field"><label>프린터 수량</label><input class="persist" id="printerCount" type="number" min="0" step="1" value="0"></div>
-      </div>
-      <div class="field" style="margin-top:16px">
-        <label>원격 설치 메모</label>
-        <textarea class="persist" id="remoteMemo" placeholder="예: 담당 VAN사, POS TID, 에스오더용 TID, 원격접속 계정, 작업 예정일 등"></textarea>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="전달">
-    <div class="card">
-      <h2>매장 특이사항 및 요구사항</h2>
-      <div class="note">설치일, 인터넷 현황, 랜선 위치, 주차, 점주 요청사항 등 설치팀이 반드시 알아야 할 내용을 정리하는 용도입니다.</div>
-      <div class="field" style="margin-top:16px">
-        <label>전달 메모</label>
-        <textarea class="persist" id="handoffMemo" style="min-height:260px" placeholder="예:
-ㅇ 설치일 : 3월 13일(12~13시)
-ㅇ 인터넷 : KT(1GB) / 기존 공유기 철거 후 KT장비 연동 요청
-ㅇ 포스 원격작업 완료
-ㅇ 오더포스쪽 기둥에 인터넷선 빠져 있음
-ㅇ 특이사항 : 주차는 건물 뒤편 골목길 가능"></textarea>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel" data-tab="위약금">
-    <div class="grid cols-2">
-      <div class="card">
-        <div class="section-title">
-          <h2>중도해지 위약금 계산기</h2>
-          <span class="badge">견적 수량 자동연동</span>
-        </div>
-        <div class="form-grid">
-          <div class="field"><label>프로모션 할인(대당)</label><input class="calc persist" id="promoDiscount" type="number" step="1" value="1000"></div>
-          <div class="field"><label>월 서비스요금</label><input class="calc persist" id="monthlyService" type="number" step="1" value="15000"></div>
-          <div class="field"><label>개통일</label><input class="calc persist" id="startDate" type="date"></div>
-          <div class="field"><label>해지일</label><input class="calc persist" id="endDate" type="date"></div>
-          <div class="field"><label>위약금율</label><input class="calc persist" id="penaltyRate" type="number" step="0.01" value="0.1"></div>
-          <div class="field"><label>프랜차이즈 할인 참고값</label><input class="persist" id="franchiseDiscount" type="number" step="1" value="1000"></div>
-        </div>
-
-        <div class="table-wrap" style="margin-top:16px">
-          <table>
-            <tbody>
-              <tr><th class="left">메뉴판 + 알림판(10인치) + 웨이팅 수량</th><td id="penaltyQty1">0</td><td class="left help">= 설치 연동 총 단말 수량 - 알림판 15인치 수량</td></tr>
-              <tr><th class="left">알림판(15인치) 수량</th><td id="penaltyQty2">0</td><td class="left help">견적 탭 연동</td></tr>
-              <tr><th class="left">이용개월수</th><td id="usageMonths">0</td><td class="left help">(해지일-개통일) ÷ (365/12)</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="table-wrap" style="margin-top:16px">
-          <table>
-            <thead><tr><th class="left">항목</th><th>VAT별도</th><th class="left">설명</th></tr></thead>
-            <tbody>
-              <tr><td class="left">(1) 초기설치비(부자재포함)</td><td id="p1">0원</td><td class="left">기본 25만원 + 1만원 × 대상 수량</td></tr>
-              <tr><td class="left">(2) 위약금</td><td id="p2">0원</td><td class="left">(36-이용개월수) × 월서비스요금 × 수량 × 위약금율</td></tr>
-              <tr><td class="left">(3) 할인반환금</td><td id="p3">0원</td><td class="left">(21,000-월서비스요금) × 이용개월수 × 수량</td></tr>
-              <tr><td class="left">(4) 프로모션 할인</td><td id="p4">0원</td><td class="left">프로모션 할인 × 수량 × 이용개월수</td></tr>
-              <tr><td class="left">(5) 으랏차차 결합할인 반환금</td><td id="p5">0원</td><td class="left">5,000 × 이용개월수</td></tr>
-              <tr><td class="left">(6) 잔여단말할부금액</td><td id="p6">0원</td><td class="left">메뉴판/10인치 5,000원, 15인치 7,000원 기준 잔여개월수 청구</td></tr>
-              <tr class="sum"><td class="left">합계(VAT별도)</td><td id="penaltySubTotal">0원</td><td class="left"></td></tr>
-              <tr class="sum"><td class="left">총 청구금액(VAT포함)</td><td id="penaltyTotal">0원</td><td class="left"></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>참고 / 타사 비교 메모</h2>
-        <div class="note">
-          하이오더 비교 설명 시에는 단순 월요금이 아니라 <b>해지 리스크, 단말 잔여할부, 설치비, 할인반환금</b>까지 함께 설명해야 합니다. 월요금만 낮게 제시하면 실제 총비용 설명이 빠져서 현장 분쟁이 생깁니다.
-        </div>
-        <div class="field" style="margin-top:16px">
-          <label>비교 설명 메모</label>
-          <textarea class="persist" id="compareMemo" placeholder="예: T오더 대비 초기 설치비 구조, 렌탈계약 여부, 프로모션 할인 환수 기준, 잔여단말 할부 청구 방식 등"></textarea>
-        </div>
-      </div>
-    </div>
-  </section>
 </div>
 
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<div class="control-panel">
+    <button id="btn-jpg">📷 JPG로 저장</button>
+    <button id="btn-pdf">📄 PDF로 저장</button>
+    <button id="btn-reset">🔄 수량/조건 초기화</button>
+</div>
+<div class="hint">수량, 단가, 요금 항목을 직접 클릭해서 수정하면 아래 금액이 자동으로 재계산됩니다. 견적 일자는 클릭하면 달력에서 선택할 수 있습니다.</div>
+
 <script>
-const tabs = ["필수","견적서","도입체크","설치체크","도면","메뉴","원격","전달","위약금"];
-const quoteRows = [
-  {type:"group", label:"메뉴판", item:"a) 태블릿"},
-  {id:"menuTablet1", category:"메뉴판", item:"하이오더 1 단말기", contractType:"할부", contract:"일시불", qty:0, priceFn:row=>row.qty===0?0:(row.contract==="일시불"?184000:0), vat:true},
-  {id:"menuTablet2", category:"메뉴판", item:"하이오더 2 단말기", contractType:"할부", contract:"36개월", qty:15, priceFn:row=>row.qty===0?0:(row.contract==="일시불"?184000:(row.contract==="24개월"?0:5000)), vat:true},
-  {type:"group", label:"메뉴판", item:"b) 선불형 카드리더기"},
-  {id:"menuReader", category:"메뉴판", item:"리더기 선택", contractType:"할부", contract:"36개월", qty:0, extraSelect:true,
-    priceFn:row=>{
-      const readerType = document.getElementById('menuReaderType').value;
-      const vendor = row.extra || "그 외";
-      if(readerType!=="선불형") return 0;
-      if(row.contract==="일시불") return vendor==="NICE"?2000:67600;
-      return vendor==="NICE"?2000:67600;
-    }, vat:true},
-  {type:"group", label:"메뉴판", item:"c) 서비스이용료"},
-  {id:"menuService", category:"메뉴판", item:"하이오더 서비스", contractType:"약정", contract:"36개월", qty:15, readonlyQty:true,
-    qtyFn:()=> getValue('menuTablet1_qty') + getValue('menuTablet2_qty'),
-    priceFn:row=>row.qty===0?0:(row.contract==="36개월선납"?486000:(row.contract==="24개월"||row.contract==="24개월선납"?0:15000)), vat:true, isService:true},
-  {type:"sum", label:"①합계(a+b+c)", sumFor:"메뉴판"},
+  const fmt = (n) => Math.round(n).toLocaleString('ko-KR');
+  const toRaw = (str) => (str || '').toString().replace(/[^0-9]/g, '');
+  const toFormatted = (raw) => raw ? parseInt(raw, 10).toLocaleString('ko-KR') : '0';
 
-  {type:"group", label:"알림판", item:"a) 태블릿(단말기)"},
-  {id:"alert10_1", category:"알림판", item:"알림판 10인치 (하이오더 1)", contractType:"약정", contract:"일시불", qty:0,
-    priceFn:row=>row.qty===0?0:(row.contract==="일시불"?184000:(row.contract==="24개월"?8500:6000)), vat:true},
-  {id:"alert10_2", category:"알림판", item:"알림판 10인치 (하이오더 2)", contractType:"약정", contract:"36개월", qty:1,
-    priceFn:row=>row.qty===0?0:(row.contract==="일시불"?170000:(row.contract==="24개월"?0:5000)), vat:true},
-  {id:"alert15", category:"알림판", item:"알림판 15인치", contractType:"약정", contract:"36개월", qty:1,
-    priceFn:row=>row.qty===0?0:(row.contract==="일시불"?237000:(row.contract==="24개월"?0:7000)), vat:true},
-  {type:"group", label:"알림판", item:"b) 서비스이용료"},
-  {id:"alertService", category:"알림판", item:"알림판(모니터) 서비스", contractType:"약정", contract:"36개월", qty:1, readonlyQty:true,
-    qtyFn:()=> getValue('alert10_1_qty') + getValue('alert10_2_qty') + getValue('alert15_qty'),
-    priceFn:row=>row.qty===0?0:(row.contract==="36개월선납"?486000:(row.contract==="24개월"||row.contract==="24개월선납"?0:15000)), vat:true, isService:true},
-  {type:"sum", label:"②합계(a+b)", sumFor:"알림판"},
-
-  {type:"group", label:"웨이팅", item:"a) 태블릿(단말기)"},
-  {id:"wait10_1", category:"웨이팅", item:"10인치 블랙 (하이오더 1)", contractType:"약정", contract:"일시불", qty:0,
-    priceFn:row=>row.qty===0?0:(row.contract==="일시불"?184000:(row.contract==="24개월"?8500:6000)), vat:true},
-  {id:"wait10_2", category:"웨이팅", item:"10인치 블랙 (하이오더 2)", contractType:"약정", contract:"36개월", qty:1,
-    priceFn:row=>row.qty===0?0:(row.contract==="일시불"?184000:(row.contract==="24개월"?0:5000)), vat:true},
-  {type:"group", label:"웨이팅", item:"b) 서비스이용료"},
-  {id:"waitService", category:"웨이팅", item:"웨이팅 솔루션", contractType:"약정", contract:"36개월", qty:1, readonlyQty:true,
-    qtyFn:()=> getValue('wait10_1_qty') + getValue('wait10_2_qty'),
-    priceFn:row=>row.qty===0?0:(row.contract==="36개월선납"?486000:(row.contract==="24개월"||row.contract==="24개월선납"?0:15000)), vat:true, isService:true},
-  {type:"group", label:"웨이팅", item:"c) 웨이팅 전용거치대(멀티탭, 배송료 포함)"},
-  {id:"waitStand", category:"웨이팅", item:"(제조사 사이트 내 별도 구매)", contractType:"할부", contract:"일시불", qty:1,
-    priceFn:row=>row.qty===0?0:180000, vat:true},
-  {type:"sum", label:"③합계(a+b+c)", sumFor:"웨이팅"},
-  {type:"grand", label:"하이오더 합계(①+②+③)"},
-
-  {type:"group", label:"설치비 및 부자재", item:"품목"},
-  {id:"installCost", category:"설치비", item:"설치비용", contractType:"할부", contract:"일시불", qty:0, readonlyQty:true,
-    qtyFn:()=> Number(document.getElementById('grandQty').dataset.value||0), priceFn:row=>row.qty*10000+250000, vat:false, note:"최초 1회 면제, 단 중도해지 시 청구"},
-  {id:"battery", category:"설치비", item:"배터리", contractType:"할부", contract:"일시불", qty:0, readonlyQty:true,
-    qtyFn:()=> Number(document.getElementById('grandQty').dataset.value||0), priceFn:row=>row.qty===0?0:17300, vat:false},
-  {id:"bracket", category:"설치비", item:"부자재(거치대, 브라켓 등)", contractType:"할부", contract:"일시불", qty:0, readonlyQty:true,
-    qtyFn:()=> Number(document.getElementById('grandQty').dataset.value||0), priceFn:row=>row.qty===0?0:16000, vat:false},
-  {id:"wifiAp", category:"설치비", item:"와이파이 AP", contractType:"할부", contract:"일시불", qty:1, priceFn:row=>row.qty*59000, vat:false},
-  {id:"amplifier", category:"설치비", item:"증폭기", contractType:"할부", contract:"일시불", qty:1, priceFn:row=>row.qty*0, vat:false},
-  {type:"installsum", label:"설치비 및 부자재 합계"}
-];
-
-const prechecks = [
-  ["1","테이블 확인","테이블 두께 확인 (8cm 미만, 8~13cm 별도 브라켓 사용, 13cm 초과시 불가)"],
-  ["1","테이블 확인","태블릿 5대 이상 설치 가능 여부"],
-  ["1","테이블 확인","태블릿 거치에 문제가 없는지 테이블 형태 확인"],
-  ["2","인터넷 상태 확인","가입 인터넷 용량과 MAC 개수 확인 (500MB 이상, MAC 2개 이상)"],
-  ["3","포스 확인","메인/오더포스 윈도우 버전 7 이상 확인"],
-  ["3","포스 확인","(기존 매장) 사용중인 POS 확인 / 연동 불가 POS의 경우 POS 변경 의향 여부 확인"],
-  ["4","매장 상면","매장 고도(천장 높이) 및 구조 특이성"],
-  ["5","비즈나루 청약 시","기타 입력란에 영업담당자 연락처 기재 여부"]
-];
-
-const installchecks = [
-  ["1","매장 사진 첨부","매장 테이블 전체가 나오게 사진 10장 이상 촬영"],
-  ["1","매장 도면 작성","매장 구조 / 테이블 형태 및 배치 / 포스 위치 확인"],
-  ["2","KT AP 신청 여부","(KOS) KT AP 신청 여부 (설치일 기준 D-7내 신청 / D-2내 설치 완료)"],
-  ["2","KT AP 신청 여부","(비즈나루) 하이오더 청약 시 KT 인터넷 정보 기재 여부"],
-  ["3","랜선 작업 상태(신규 창업점)","공유기 및 랜선 위치 확인 후 도면 기재"],
-  ["3","랜선 작업 상태(신규 창업점)","프린터+공유기용 랜선 사진 촬영"],
-  ["4","포스 확인(기존 성업점/기존 포스 사용점)","메인/오더포스 개수 확인"],
-  ["4","포스 확인(기존 성업점/기존 포스 사용점)","담당 VAN사를 통해 POS TID 및 에스오더용 TID 요청"],
-  ["4","포스 확인(기존 성업점/기존 포스 사용점)","프린터 개수 확인"],
-  ["4","포스 확인(기존 성업점/기존 포스 사용점)","메인 POS에 원격 프로그램 설치 여부"],
-  ["4","포스 확인(기존 성업점/기존 포스 사용점)","메뉴판 콘텐츠 제작을 위한 메뉴판 사진 및 음료/주류 정보 전달 여부"]
-];
-
-function won(n){
-  return new Intl.NumberFormat('ko-KR').format(Math.round(Number(n)||0)) + '원';
-}
-function num(n){
-  return new Intl.NumberFormat('ko-KR').format(Math.round(Number(n)||0));
-}
-function getValue(id){
-  const el=document.getElementById(id);
-  return Number(el?.value||el?.dataset.value||0);
-}
-function monthsBetween(start, end){
-  if(!start || !end) return 0;
-  const s = new Date(start);
-  const e = new Date(end);
-  const diffMs = e - s;
-  if(isNaN(diffMs) || diffMs < 0) return 0;
-  return diffMs / (365/12*24*60*60*1000);
-}
-function buildTabs(){
-  const wrap = document.getElementById('tabs');
-  tabs.forEach((tab, i)=>{
-    const btn = document.createElement('button');
-    btn.className='tab' + (i===0?' active':'');
-    btn.textContent=tab;
-    btn.onclick=()=>activateTab(tab, btn);
-    wrap.appendChild(btn);
-  });
-}
-function activateTab(tab, btn){
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.dataset.tab===tab));
-}
-function contractOptions(row){
-  const options = row.isService ? ["36개월","36개월선납","24개월","24개월선납"] :
-    ["일시불","36개월","24개월"];
-  return options.map(v=>`<option value="${v}" ${v===row.contract?'selected':''}>${v}</option>`).join('');
-}
-function buildQuoteTable(){
-  const body = document.getElementById('quoteBody');
-  quoteRows.forEach(row=>{
-    const tr=document.createElement('tr');
-    if(row.type==="group"){
-      tr.innerHTML=`<td class="group">${row.label}</td><td class="left group" colspan="7">${row.item}</td>`;
-    }else if(row.type==="sum"){
-      tr.innerHTML=`<td class="sum">${row.label}</td><td class="left sum" colspan="2">${row.sumFor}</td>
-      <td class="sum" id="sum_qty_${row.sumFor}">0</td>
-      <td class="sum">-</td>
-      <td class="sum" id="sum_supply_${row.sumFor}">0원</td>
-      <td class="sum" id="sum_vat_${row.sumFor}">0원</td>
-      <td class="sum" id="sum_total_${row.sumFor}">0원</td>`;
-    }else if(row.type==="grand"){
-      tr.innerHTML=`<td class="sum">${row.label}</td><td class="left sum" colspan="2">① + ② + ③</td>
-      <td class="sum" id="grandQty" data-value="0">0</td>
-      <td class="sum">-</td>
-      <td class="sum" id="grandSupply">0원</td>
-      <td class="sum" id="grandVat">0원</td>
-      <td class="sum" id="grandTotal">0원</td>`;
-    }else if(row.type==="installsum"){
-      tr.innerHTML=`<td class="sum">${row.label}</td><td class="left sum" colspan="4">설치비 + 부자재</td>
-      <td class="sum" id="installSupply">0원</td><td class="sum">-</td><td class="sum" id="installTotal">0원</td>`;
-    }else{
-      tr.innerHTML = `
-        <td>${row.category}</td>
-        <td class="left">${row.item}${row.extraSelect?`<div style="margin-top:6px"><select class="persist calc" id="${row.id}_extra"><option value="그 외">그 외</option><option value="NICE">NICE</option></select></div>`:''}</td>
-        <td>${row.contractType?`<select class="persist calc" id="${row.id}_contract">${contractOptions(row)}</select>`:'-'}</td>
-        <td>${row.readonlyQty?`<input id="${row.id}_qty" type="number" value="${row.qty}" readonly>`:`<input class="persist calc" id="${row.id}_qty" type="number" min="0" step="1" value="${row.qty}">`}</td>
-        <td id="${row.id}_unit">0원</td>
-        <td id="${row.id}_supply">0원</td>
-        <td id="${row.id}_vat">0원</td>
-        <td id="${row.id}_total">0원${row.note?`<div class="help">${row.note}</div>`:''}</td>`;
-    }
-    body.appendChild(tr);
-  });
-}
-function calcQuote(){
-  const categories = {"메뉴판":{qty:0,supply:0,vat:0,total:0},"알림판":{qty:0,supply:0,vat:0,total:0},"웨이팅":{qty:0,supply:0,vat:0,total:0}};
-  const terminalIds = ["menuTablet1","menuTablet2","alert10_1","alert10_2","alert15","wait10_1","wait10_2"];
-  const terminalIdSet = new Set(terminalIds);
-
-  // 1차: 하이오더 영역 계산
-  quoteRows.forEach(row=>{
-    if(row.type || !row.id || row.category==="설치비") return;
-    const contractEl = document.getElementById(`${row.id}_contract`);
-    const qtyEl = document.getElementById(`${row.id}_qty`);
-    const extraEl = document.getElementById(`${row.id}_extra`);
-    const rowObj = {
-      contract: contractEl ? contractEl.value : row.contract,
-      qty: row.qtyFn ? Number(row.qtyFn()) : Number(qtyEl.value||0),
-      extra: extraEl ? extraEl.value : null
-    };
-    if(qtyEl && row.readonlyQty) qtyEl.value = rowObj.qty;
-    const unit = Number(row.priceFn(rowObj) || 0);
-    const supply = unit * rowObj.qty;
-    const vat = row.vat===false ? 0 : supply * 0.1;
-    const total = supply + vat;
-
-    document.getElementById(`${row.id}_unit`).textContent = won(unit);
-    document.getElementById(`${row.id}_supply`).textContent = won(supply);
-    document.getElementById(`${row.id}_vat`).textContent = row.vat===false ? '-' : won(vat);
-    document.getElementById(`${row.id}_total`).childNodes[0].textContent = row.vat===false ? won(supply) : won(total);
-
-    if(["메뉴판","알림판","웨이팅"].includes(row.category)){
-      if(terminalIdSet.has(row.id)) categories[row.category].qty += rowObj.qty;
-      categories[row.category].supply += supply;
-      categories[row.category].vat += vat;
-      categories[row.category].total += total;
-    }
-  });
-
-  ["메뉴판","알림판","웨이팅"].forEach(cat=>{
-    document.getElementById(`sum_qty_${cat}`).textContent = num(categories[cat].qty);
-    document.getElementById(`sum_supply_${cat}`).textContent = won(categories[cat].supply);
-    document.getElementById(`sum_vat_${cat}`).textContent = won(categories[cat].vat);
-    document.getElementById(`sum_total_${cat}`).textContent = won(categories[cat].total);
-  });
-
-  const grandQty = categories["메뉴판"].qty + categories["알림판"].qty + categories["웨이팅"].qty;
-  const linkedTerminalQty = terminalIds.reduce((sum, id)=> sum + getValue(`${id}_qty`), 0);
-  const grandSupply = categories["메뉴판"].supply + categories["알림판"].supply + categories["웨이팅"].supply;
-  const grandVat = categories["메뉴판"].vat + categories["알림판"].vat + categories["웨이팅"].vat;
-  const grandTotal = categories["메뉴판"].total + categories["알림판"].total + categories["웨이팅"].total;
-
-  const grandQtyEl = document.getElementById('grandQty');
-  grandQtyEl.textContent = num(linkedTerminalQty);
-  grandQtyEl.dataset.value = linkedTerminalQty;
-  document.getElementById('grandSupply').textContent = won(grandSupply);
-  document.getElementById('grandVat').textContent = won(grandVat);
-  document.getElementById('grandTotal').textContent = won(grandTotal);
-
-  // 2차: 설치비 영역 계산
-  let installSupply = 0;
-  ["installCost","battery","bracket","wifiAp","amplifier"].forEach(id=>{
-    const row = quoteRows.find(r=>r.id===id);
-    const qtyEl = document.getElementById(`${row.id}_qty`);
-    const contractEl = document.getElementById(`${row.id}_contract`);
-    const rowObj = {
-      contract: contractEl ? contractEl.value : row.contract,
-      qty: row.qtyFn ? Number(row.qtyFn()) : Number(qtyEl.value||0)
-    };
-    qtyEl.value = rowObj.qty;
-    const unit = Number(row.priceFn(rowObj) || 0);
-    const supply = row.id==="installCost" ? unit : unit * rowObj.qty;
-    document.getElementById(`${row.id}_unit`).textContent = won(unit);
-    document.getElementById(`${row.id}_supply`).textContent = won(supply);
-    document.getElementById(`${row.id}_vat`).textContent = '-';
-    document.getElementById(`${row.id}_total`).childNodes[0].textContent = won(supply);
-    installSupply += supply;
-  });
-
-  document.getElementById('installSupply').textContent = won(installSupply);
-  document.getElementById('installTotal').textContent = won(installSupply);
-
-  document.getElementById('kpiTotalQty').textContent = num(linkedTerminalQty);
-  document.getElementById('kpiOrderTotal').textContent = won(grandTotal);
-  document.getElementById('kpiInstallTotal').textContent = won(installSupply);
-  document.getElementById('kpiGrandTotal').textContent = won(grandTotal + installSupply);
-
-  syncEstimateCapture();
-  calcPenalty();
-}
-function parseNumberFromWon(txt){
-  return Number(String(txt).replace(/[^\d.-]/g,'')) || 0;
-}
-function buildCheckTable(targetId, arr, prefix){
-  const tbody=document.getElementById(targetId);
-  arr.forEach((r, idx)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td>${r[0]}</td>
-      <td class="left">${r[1]}</td>
-      <td class="left">${r[2]}</td>
-      <td>
-        <select class="persist" id="${prefix}_status_${idx}">
-          <option value="미확인">미확인</option>
-          <option value="O">O</option>
-          <option value="X">X</option>
-        </select>
-      </td>
-      <td class="left"><input class="persist" id="${prefix}_note_${idx}" type="text" placeholder="비고 입력"></td>`;
-    tbody.appendChild(tr);
-  });
-}
-function calcPenalty(){
-  const totalQty = Number(document.getElementById('grandQty').dataset.value || 0);
-  const qty15 = getValue('alert15_qty');
-  const qtyBundle = Math.max(totalQty - qty15, 0);
-  const promoDiscount = getValue('promoDiscount');
-  const monthlyService = getValue('monthlyService');
-  const rate = Number(document.getElementById('penaltyRate').value || 0);
-  const usage = monthsBetween(document.getElementById('startDate').value, document.getElementById('endDate').value);
-  const remain = Math.max(36 - usage, 0);
-
-  const p1 = 250000 + 10000 * qtyBundle;
-  const p2 = remain * monthlyService * qtyBundle * rate;
-  const p3 = (21000 - monthlyService) * usage * qtyBundle;
-  const p4 = promoDiscount * qtyBundle * usage;
-  const p5 = 5000 * usage;
-  const p6 = qtyBundle * 5000 * remain + qty15 * 7000 * remain;
-  const subtotal = p1+p2+p3+p4+p5+p6;
-  const total = subtotal * 1.1;
-
-  document.getElementById('penaltyQty1').textContent = num(qtyBundle);
-  document.getElementById('penaltyQty2').textContent = num(qty15);
-  document.getElementById('usageMonths').textContent = usage.toFixed(2);
-  document.getElementById('p1').textContent = won(p1);
-  document.getElementById('p2').textContent = won(p2);
-  document.getElementById('p3').textContent = won(p3);
-  document.getElementById('p4').textContent = won(p4);
-  document.getElementById('p5').textContent = won(p5);
-  document.getElementById('p6').textContent = won(p6);
-  document.getElementById('penaltySubTotal').textContent = won(subtotal);
-  document.getElementById('penaltyTotal').textContent = won(total);
-}
-
-function syncEstimateCapture(){
-  const map = {
-    captureQuoteDate:'quoteDate', captureStoreName:'storeName', captureServiceName:'serviceName', captureQuoteValid:'quoteValid',
-    captureBizNo:'bizNo', captureCompanyName:'companyName', captureCompanyName2:'companyName', captureCeoName:'ceoName',
-    captureCompanyAddress:'companyAddress', captureIndustry:'industry', captureManagerName:'managerName', captureManagerPhone:'managerPhone'
+  const els = {
+    normalPrice: document.getElementById('normalPrice'),
+    promoPrice: document.getElementById('promoPrice'),
+    qty: document.getElementById('qty'),
+    normalMonthly: document.getElementById('normalMonthly'),
+    discountMonthly: document.getElementById('discountMonthly'),
+    supplyAmount: document.getElementById('supplyAmount'),
+    capexSaving: document.getElementById('capexSaving'),
+    perUnitMonthly: document.getElementById('perUnitMonthly'),
+    totalMonthly: document.getElementById('totalMonthly'),
+    annualTotal: document.getElementById('annualTotal'),
   };
-  Object.entries(map).forEach(([targetId, sourceId])=>{
-    const target = document.getElementById(targetId);
-    const source = document.getElementById(sourceId);
-    if(target && source) target.textContent = source.value || '-';
-  });
-  const d = document.getElementById('quoteDate')?.value || '';
-  if(d) document.getElementById('captureQuoteDate').textContent = d;
-}
 
-function saveEstimateImage(){
-  syncEstimateCapture();
-  calcQuote();
-  const target = document.getElementById('estimateArea');
-  if(typeof html2canvas === 'undefined'){
-    alert('이미지 저장 라이브러리를 불러오지 못했습니다. 인터넷 연결 상태를 확인한 뒤 다시 시도해 주세요.');
-    return;
+  const moneyInputs = document.querySelectorAll('.money-input');
+
+  const defaults = {
+    supplyName: '골프장 경기 운영 혁신을 위한<br>VoLTE 무전기 도입', // 초기화 시 두 줄 유지되도록 수정
+    quoteDate: '2026-07-01',
+    managerInfo: '김영훈 과장 010-8290-9971',
+    deviceName: '모토로라 솔루션 RG170 (WAVE PTX)',
+    deviceSpec: '모토로라 RG170 (IP69 방수, 1.5W 고출력 스피커)',
+    normalPrice: '297,000',
+    promoPrice: '0',
+    qty: 60,
+    planName: '기업전용 라이트(9,900원)+PTX 부가서비스(5,500원)',
+    normalMonthly: '15,400',
+    discountMonthly: '2,475',
+  };
+
+  function recalc() {
+    const normalPrice = parseFloat(toRaw(els.normalPrice.value)) || 0;
+    const promoPrice = parseFloat(toRaw(els.promoPrice.value)) || 0;
+    const qty = parseFloat(els.qty.value) || 0;
+    const normalMonthly = parseFloat(toRaw(els.normalMonthly.value)) || 0;
+    const discountMonthly = parseFloat(toRaw(els.discountMonthly.value)) || 0;
+
+    const supplyAmount = promoPrice * qty;
+    const capexSaving = (normalPrice - promoPrice) * qty;
+    const perUnitMonthly = Math.max(normalMonthly - discountMonthly, 0);
+    const totalMonthly = perUnitMonthly * qty;
+    const annualTotal = totalMonthly * 12;
+
+    els.supplyAmount.textContent = fmt(supplyAmount);
+    els.capexSaving.textContent = fmt(capexSaving);
+    els.perUnitMonthly.textContent = fmt(perUnitMonthly);
+    els.totalMonthly.textContent = fmt(totalMonthly);
+    els.annualTotal.textContent = fmt(annualTotal);
   }
-  html2canvas(target,{
-    scale:2,
-    useCORS:true,
-    backgroundColor:'#ffffff',
-    windowWidth: Math.max(document.body.scrollWidth, target.scrollWidth + 100)
-  }).then(canvas=>{
-    const store = (document.getElementById('storeName')?.value || '견적서').trim().replace(/[\\/:*?"<>|]/g,'');
-    const date = document.getElementById('quoteDate')?.value || new Date().toISOString().slice(0,10);
-    const link = document.createElement('a');
-    link.download = `하이오더견적서_${store}_${date}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }).catch(err=>{
-    console.error(err);
-    alert('견적서 이미지 저장 중 오류가 발생했습니다.');
-  });
-}
 
-function attachEvents(){
-  document.querySelectorAll('input, select, textarea').forEach(el=>{
-    el.addEventListener('input', ()=>{
-      persistState();
-      calcQuote();
-    });
-    el.addEventListener('change', ()=>{
-      persistState();
-      calcQuote();
+  moneyInputs.forEach(inp => {
+    inp.addEventListener('input', recalc);
+    inp.addEventListener('blur', () => {
+      inp.value = toFormatted(toRaw(inp.value));
+      recalc();
     });
   });
-}
-function persistState(){
-  const data={};
-  document.querySelectorAll('.persist').forEach(el=>{
-    data[el.id]=el.value;
-  });
-  localStorage.setItem('highorder_html_state', JSON.stringify(data));
-}
-function loadPersisted(){
-  const raw = localStorage.getItem('highorder_html_state');
-  if(!raw) return;
-  try{
-    const data=JSON.parse(raw);
-    Object.entries(data).forEach(([id,val])=>{
-      const el=document.getElementById(id);
-      if(el) el.value=val;
+  els.qty.addEventListener('input', recalc);
+
+  recalc();
+
+  function formatKoreanDate(isoStr) {
+    if (!isoStr) return '';
+    const [y, m, d] = isoStr.split('-');
+    return `${y}년 ${m}월 ${d}일`;
+  }
+
+  function resetAll() {
+    document.getElementById('supplyName').innerHTML = defaults.supplyName; // div 구동을 위해 .value에서 .innerHTML로 변경
+    document.getElementById('quoteDate').value = defaults.quoteDate;
+    document.getElementById('managerInfo').value = defaults.managerInfo;
+    document.getElementById('deviceName').value = defaults.deviceName;
+    document.getElementById('deviceSpec').textContent = defaults.deviceSpec;
+    els.normalPrice.value = defaults.normalPrice;
+    els.promoPrice.value = defaults.promoPrice;
+    els.qty.value = defaults.qty;
+    document.getElementById('planName').textContent = defaults.planName;
+    els.normalMonthly.value = defaults.normalMonthly;
+    els.discountMonthly.value = defaults.discountMonthly;
+    recalc();
+  }
+  document.getElementById('btn-reset').addEventListener('click', resetAll);
+
+  function captureCanvas() {
+    moneyInputs.forEach(inp => { inp.value = toFormatted(toRaw(inp.value)); });
+    return html2canvas(document.getElementById('quotation'), {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      onclone: (clonedDoc) => {
+        clonedDoc.querySelectorAll('#quotation input').forEach(input => {
+          const span = clonedDoc.createElement('span');
+          if (input.type === 'date') {
+            span.textContent = formatKoreanDate(input.value);
+          } else {
+            span.textContent = input.value;
+          }
+          const computed = window.getComputedStyle(input);
+          span.style.cssText = computed.cssText;
+          span.style.display = 'inline-block';
+          span.style.width = input.classList.contains('money-input') && input.id === 'discountMonthly' ? 'auto' : '100%';
+          input.parentNode.replaceChild(span, input);
+        });
+      }
     });
-  }catch(e){}
-}
-function resetAll(){
-  if(!confirm('모든 입력값을 초기화하시겠습니까?')) return;
-  localStorage.removeItem('highorder_html_state');
-  location.reload();
-}
-function downloadJson(){
-  const data={};
-  document.querySelectorAll('.persist').forEach(el=>data[el.id]=el.value);
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='하이오더_입력값.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-function loadJson(event){
-  const file=event.target.files[0];
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const data=JSON.parse(reader.result);
-      Object.entries(data).forEach(([id,val])=>{
-        const el=document.getElementById(id);
-        if(el) el.value=val;
-      });
-      persistState();
-      calcQuote();
-    }catch(e){
-      alert('JSON 파일 형식이 올바르지 않습니다.');
-    }
-  };
-  reader.readAsText(file,'utf-8');
-}
-function setDefaultDates(){
-  const today = new Date().toISOString().slice(0,10);
-  const plus2y = new Date();
-  plus2y.setFullYear(plus2y.getFullYear()+2);
-  const twoYear = plus2y.toISOString().slice(0,10);
-  if(!document.getElementById('quoteDate').value) document.getElementById('quoteDate').value=today;
-  if(!document.getElementById('startDate').value) document.getElementById('startDate').value=today;
-  if(!document.getElementById('endDate').value) document.getElementById('endDate').value=twoYear;
-}
-buildTabs();
-buildQuoteTable();
-buildCheckTable('precheckBody', prechecks, 'pre');
-buildCheckTable('installcheckBody', installchecks, 'install');
-loadPersisted();
-setDefaultDates();
-attachEvents();
-calcQuote();
+  }
+
+  document.getElementById('btn-jpg').addEventListener('click', async () => {
+    const canvas = await captureCanvas();
+    const link = document.createElement('a');
+    link.download = 'KT_MnS_PTX_견적서.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.95);
+    link.click();
+  });
+
+  document.getElementById('btn-pdf').addEventListener('click', async () => {
+    const canvas = await captureCanvas();
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    pdf.save('KT_MnS_PTX_견적서.pdf');
+  });
 </script>
+
 </body>
 </html>
